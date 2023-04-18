@@ -19,46 +19,78 @@ export class Storage {
         setTimeout(() => this.tick(), tickInterval);
     }
 
+    /**
+     * Delete a key from the storage
+     * @param key 
+     */
     public async Delete(key: string) {
         await this.requestAccess();
         delete this.state[key];
         this.hasChanged = true;
     }
 
+    /**
+     * Set a value to specified key
+     * @param key
+     * @param value valid types: number, boolean, string, null, undefined, object
+     */
     public async Set(key: string, value: number | boolean | string | null | undefined | object) {
         await this.requestAccess();
         this.state[key] = value;
         this.hasChanged = true;
     }
 
+
+    /**
+     * Get a value from the specified key
+     * @param key
+     * @returns one of the following: number, boolean, string, null, undefined, object
+     */
     public async Get(key: string): Promise<number | boolean | string | null | undefined | object> {
         await this.requestAccess();
         return this.state[key];
     }
 
-    public async Lock(key: string, ttl_ms = 10000): Promise<number> {
+    /**
+     * Locks the specified key, the end of the ttl will be written to it
+     * @param key 
+     * @param maximumTTL the maximum time the key is locked
+     * @param retryTime if the lock can not be acquired, wait for this amount of ms for a retry
+     * @returns the ttl of the key, pass it to unlock to ensure correct behaviour
+     */
+    public async Lock(key: string, maximumTTL = 10000, retryTime = 10): Promise<number> {
         await this.requestAccess();
         let lock: any = this.state[key];
         let now = Date.now();
         if (typeof lock === 'number' && !Number.isNaN(lock) && lock > now) {
             return await new Promise((resolve, _reject) => {
-                setTimeout(async () => { resolve(this.Lock(key, ttl_ms)) }, lock - now);
+                setTimeout(async () => { resolve(this.Lock(key, maximumTTL)) }, Math.min(lock - now, retryTime));
             });
         }
-        let ttl = now + ttl_ms;
+        let ttl = now + maximumTTL;
         this.state[key] = ttl;
         this.hasChanged = true;
         return ttl;
     }
 
-    public async TryLock(key: string, ttl_ms = 10000) {
+    /**
+     * The same as Lock but it will fail if it can not acquire the lock
+     * @param key 
+     * @param maximumTTL 
+     */
+    public async TryLock(key: string, maximumTTL = 10000) {
         await this.requestAccess();
         let lock: any = this.state[key];
         if (lock && lock > Date.now()) throw new Error(`Key ${key} is already locked until ${lock}`);
-        this.state[key] = Date.now() + ttl_ms;
+        this.state[key] = Date.now() + maximumTTL;
         this.hasChanged = true;
     }
 
+    /**
+     * Unlocks a key if the expectedValue still matches the key's value
+     * @param key 
+     * @param expectedValue 
+     */
     public async Unlock(key: string, expectedValue: number) {
         let value = await this.Get(key);
         if (value === expectedValue) await this.Delete(key);
