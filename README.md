@@ -1,2 +1,9 @@
 # smol-storage
-A simple but persistent and concurrent storage using the file system for Node.js. 
+A simple but persistent and concurrently usable storage for Node.js
+
+### Usage
+
+
+### Additional Information
+
+

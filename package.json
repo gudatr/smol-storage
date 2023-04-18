@@ -1,0 +1,20 @@
+{
+  "name": "smol-storage",
+  "version": "1.0.0",
+  "description": "A simple but persistent and concurrently usable storage for Node.js",
+  "main": "index.js",
+  "keywords": [
+    "store",
+    "storage",
+    "persistent",
+    "concurrent",
+    "multithread",
+    "file",
+    "filesystem"
+  ],
+  "author": "gudatr",
+  "license": "MIT",
+  "dependencies": {
+    "@types/node": "^18.15.11"
+  }
+}
