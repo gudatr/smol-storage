@@ -10,21 +10,32 @@ export default class Storage {
     private requestPath: string;
     private lockPath: string;
     private hasChanged: boolean = false;
+    private active: boolean = true;
 
-    constructor(private path: string, private tickInterval: number = 50) {
+    constructor(private path: string, private tickIntervalOwnership: number = 30, private tickIntervalPersistence = 500) {
         this.requestPath = path + "_request";
         this.lockPath = path + "_lock";
-        setTimeout(() => this.tick(), tickInterval);
 
-        process.on('exit', async (code) => {
+        setTimeout(() => this.tickOwnership(), tickIntervalOwnership);
 
+        setTimeout(() => this.tickPersistence(), tickIntervalPersistence);
+
+        process.on('exit', async (_code) => {
             if (this.requested) fs.rmdir(this.requestPath, (err) => console.log(err));
 
-            if (this.file) {
-                await this.writeState();
-                fs.rmdir(this.lockPath, (err) => console.log(err));
-            }
+            await this.writeState();
+
+            if (this.file) fs.rmdir(this.lockPath, (err) => console.log(err));
         });
+    }
+
+    /**
+     * Shut the storage down, storage file will be released and writes or reads will no longer be performed
+     * @param key 
+     */
+    public async shutdown() {
+        this.active = false;
+        await this.yieldOwnership();
     }
 
     /**
@@ -119,13 +130,13 @@ export default class Storage {
     }
 
     private async requestAccess() {
-        if (this.file) return;
+        if (this.active && this.file) return;
 
         return new Promise(async (resolve, _reject) => {
-            await this.acquireOwnership(this.requestPath, this.tickInterval / 5);
+            await this.acquireOwnership(this.requestPath, this.tickIntervalOwnership / 3);
             this.requested = true;
 
-            await this.acquireOwnership(this.lockPath, this.tickInterval / 5);
+            await this.acquireOwnership(this.lockPath, this.tickIntervalOwnership / 3);
 
             await fs.promises.rmdir(this.requestPath);
             this.requested = false;
@@ -152,23 +163,33 @@ export default class Storage {
     }
 
     private async yieldOwnership() {
-        this.file?.close();
+        await this.writeState();
+        await this.file?.close();
         await fs.promises.rmdir(this.lockPath);
         this.file = undefined;
     }
 
-    private async tick() {
+    private async tickOwnership() {
         try {
             if (!this.file) return;
-
-            await this.writeState();
 
             let requestFileExists = !(await fs.promises.access(this.requestPath, fs.constants.F_OK).catch(_e => true));
 
             if (requestFileExists) await this.yieldOwnership();
 
         } finally {
-            setTimeout(() => this.tick(), this.tickInterval);
+            if (this.active) setTimeout(() => this.tickOwnership(), this.tickIntervalOwnership);
+        }
+    }
+
+    private async tickPersistence() {
+        try {
+            if (!this.file) return;
+
+            await this.writeState();
+
+        } finally {
+            if (this.active) setTimeout(() => this.tickPersistence(), this.tickIntervalPersistence);
         }
     }
 

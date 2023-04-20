@@ -1,13 +1,20 @@
 export default class Storage {
     private path;
-    private tickInterval;
+    private tickIntervalOwnership;
+    private tickIntervalPersistence;
     private file;
     private requested;
     private state;
     private requestPath;
     private lockPath;
     private hasChanged;
-    constructor(path: string, tickInterval?: number);
+    private active;
+    constructor(path: string, tickIntervalOwnership?: number, tickIntervalPersistence?: number);
+    /**
+     * Shut the storage down, storage file will be released and writes or reads will no longer be performed
+     * @param key
+     */
+    shutdown(): Promise<void>;
     /**
      * Delete a key from the storage
      * @param key
@@ -50,7 +57,8 @@ export default class Storage {
     private requestAccess;
     private acquireOwnership;
     private yieldOwnership;
-    private tick;
+    private tickOwnership;
+    private tickPersistence;
     private stateToString;
     private updateStateFromString;
 }
