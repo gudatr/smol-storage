@@ -24,9 +24,10 @@ export default class Storage {
         process.on('exit', async (_code) => {
             if (this.requested) fs.rmdir(this.requestPath, (err) => console.log(err));
 
-            await this.writeState();
-
-            if (this.owned) fs.rmdir(this.lockPath, (err) => console.log(err));
+            if (this.owned) {
+                await this.writeState();
+                fs.rmdir(this.lockPath, (err) => console.log(err));
+            }
         });
     }
 
