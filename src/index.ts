@@ -6,6 +6,7 @@ export default class Storage {
 
     private file: fs.promises.FileHandle | undefined;
     private requested: boolean = false;
+    private owned: boolean = false;
     private state: StorageState = {};
     private requestPath: string;
     private lockPath: string;
@@ -25,7 +26,7 @@ export default class Storage {
 
             await this.writeState();
 
-            if (this.file) fs.rmdir(this.lockPath, (err) => console.log(err));
+            if (this.owned) fs.rmdir(this.lockPath, (err) => console.log(err));
         });
     }
 
@@ -137,6 +138,7 @@ export default class Storage {
             this.requested = true;
 
             await this.acquireOwnership(this.lockPath, this.tickIntervalOwnership / 3);
+            this.owned = true;
 
             await fs.promises.rmdir(this.requestPath);
             this.requested = false;
@@ -166,6 +168,7 @@ export default class Storage {
         await this.writeState();
         await this.file?.close();
         await fs.promises.rmdir(this.lockPath);
+        this.owned = false;
         this.file = undefined;
     }
 

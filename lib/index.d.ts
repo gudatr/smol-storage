@@ -4,6 +4,7 @@ export default class Storage {
     private tickIntervalPersistence;
     private file;
     private requested;
+    private owned;
     private state;
     private requestPath;
     private lockPath;
