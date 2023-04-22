@@ -12,7 +12,7 @@ export default class Storage {
     private hasChanged: boolean = false;
     private active: boolean = true;
 
-    constructor(private path: string, private tickIntervalOwnership: number = 30, private tickIntervalPersistence = 500) {
+    constructor(private path: string, private tickIntervalOwnership: number = 50, private tickIntervalPersistence = 500) {
         this.requestPath = path + "_request";
         this.lockPath = path + "_lock";
 
