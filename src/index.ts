@@ -25,8 +25,8 @@ export default class Storage {
             if (this.requested) fs.rmdir(this.requestPath, (err) => console.log(err));
 
             if (this.owned) {
-                await this.writeState();
-                fs.rmdir(this.lockPath, (err) => console.log(err));
+                this.writeStateSync();
+                fs.rmdirSync(this.lockPath);
             }
         });
     }
@@ -124,11 +124,22 @@ export default class Storage {
         }
     }
 
+    private async writeStateSync() {
+        if (this.hasChanged && this.file) {
+            this.file.close();
+            fs.truncateSync(this.path);
+            fs.writeFileSync(this.path, this.stateToString(), { encoding: 'utf-8' })
+            this.hasChanged = false;
+        }
+    }
+
     private async readState() {
         this.file = await fs.promises.open(this.path, 'a+');
         let result = await this.file.read({ position: 0 });
         let fileContents = result.buffer;
         this.updateStateFromString(fileContents.toString('utf-8', 0, result.bytesRead));
+        this.file.close();
+        this.file = await fs.promises.open(this.path, 'w+');
     }
 
     private async requestAccess() {
@@ -213,7 +224,6 @@ export default class Storage {
             parts[i++] = key;
             parts[i++] = value;
         }
-        console.log(parts);
         return parts.join('\n');
     }
 

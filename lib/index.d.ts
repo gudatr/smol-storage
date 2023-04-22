@@ -54,6 +54,7 @@ export default class Storage {
      */
     unlock(key: string, expectedValue: number): Promise<void>;
     private writeState;
+    private writeStateSync;
     private readState;
     private requestAccess;
     private acquireOwnership;
