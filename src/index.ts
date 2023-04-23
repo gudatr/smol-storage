@@ -12,10 +12,12 @@ export default class Storage {
     private lockPath: string;
     private hasChanged: boolean = false;
     private active: boolean = true;
+    private accessInternval: number;
 
     constructor(private path: string, private tickIntervalOwnership: number = 50, private tickIntervalPersistence = 500) {
         this.requestPath = path + "_request";
         this.lockPath = path + "_lock";
+        this.accessInternval = this.tickIntervalOwnership / 1.75;
 
         setTimeout(() => this.tickOwnership(), tickIntervalOwnership);
 
@@ -146,10 +148,10 @@ export default class Storage {
         if (this.active && this.file) return;
 
         return new Promise(async (resolve, _reject) => {
-            await this.acquireOwnership(this.requestPath, this.tickIntervalOwnership / 3);
+            await this.acquireOwnership(this.requestPath, this.accessInternval);
             this.requested = true;
 
-            await this.acquireOwnership(this.lockPath, this.tickIntervalOwnership / 3);
+            await this.acquireOwnership(this.lockPath, this.accessInternval);
             this.owned = true;
 
             await fs.promises.rmdir(this.requestPath);

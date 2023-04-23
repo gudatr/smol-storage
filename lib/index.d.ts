@@ -10,6 +10,7 @@ export default class Storage {
     private lockPath;
     private hasChanged;
     private active;
+    private accessInternval;
     constructor(path: string, tickIntervalOwnership?: number, tickIntervalPersistence?: number);
     /**
      * Shut the storage down, storage file will be released and writes or reads will no longer be performed
